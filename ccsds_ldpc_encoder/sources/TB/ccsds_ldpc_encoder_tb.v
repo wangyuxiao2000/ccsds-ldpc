@@ -1,5 +1,5 @@
 /*************************************************************/
-//function: CCSDS-(8160,7136)LDPC编码器测试激励
+//function: CCSDS-LDPC编码器测试激励
 //Author  : WangYuxiao
 //Email   : wyxee2000@163.com
 //Data    : 2023.12.21
@@ -33,16 +33,17 @@ reg m_tready;
 
 
 /************************例化待测模块************************/
-ccsds_ldpc_encoder i1 (.clk(clk),
-                       .rst_n(rst_n),
-                       .s_axis_tdata(s_tdata),
-                       .s_axis_tvalid(s_tvalid),
-                       .s_axis_tready(s_tready),
-                       .m_axis_tdata(m_tdata),
-                       .m_axis_tvalid(m_tvalid),
-                       .m_axis_tlast(m_tlast),
-                       .m_axis_tready(m_tready)
-                      );		   
+ccsds_ldpc_encoder #(.stander("8160,7136")
+                    ) i1 (.clk(clk),
+                          .rst_n(rst_n),
+                          .s_axis_tdata(s_tdata),
+                          .s_axis_tvalid(s_tvalid),
+                          .s_axis_tready(s_tready),
+                          .m_axis_tdata(m_tdata),
+                          .m_axis_tvalid(m_tvalid),
+                          .m_axis_tlast(m_tlast),
+                          .m_axis_tready(m_tready)
+                         );
 /************************************************************/
 
 

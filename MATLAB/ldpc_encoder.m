@@ -1,47 +1,56 @@
 %*************************************************************%
-% function: QC-LDPC编码
+% function: QC-LDPC编码(适配CCSDS协议)
 % Author  : WangYuxiao
 % Email   : wyxee2000@163.com
-% Data    : 2023.12.21
+% Data    : 2023.1.3
 % Version : V 1.0
 %*************************************************************%
-function [result] = ldpc_encoder(usr_data, n, k, G_sub_matrix, G_sub_matrix_size)
-    
-    % 如果输入矩阵不是行向量，按行拼接并转换为行向量
+function [H, G_sub_matrix, sub_matrix_size, result] = ldpc_encoder(stander, usr_data)
+
+    % 如果输入矩阵不是行向量,提示错误信息
     if ~isrow(usr_data) 
-        usr_data = reshape(usr_data.', 1, []);
+        error("Input must be a row vector.");
     end
     
-    % 计算当前输入数据对应的LDPC码块个数
-    block_num = floor(length(usr_data)/k);
+    % 产生H/G矩阵
+    [H, G_sub_matrix, sub_matrix_size] = H_G_generator(stander);
     
-    % 声明输出矩阵维度
-    result = zeros(block_num, n);
+    % 提取当前码字的(n, k)参数
+    splitStr = split(stander, "_");
+    n = str2double(splitStr{1});
+    k = str2double(splitStr{2});
     
-    % 计算LDPC块编码
-    for block_cnt = 1:block_num
-        usr_data_reg = usr_data(k*(block_cnt-1)+1 : k*block_cnt);
+    % 计算当前输入数据对应的码块个数
+    block_num = floor(numel(usr_data)/k);
+    usr_data_valid = usr_data(1:block_num*k);
+    
+    % 进行编码
+    if (stander == "8160_7136")
+        % 进行虚拟填充(7136bit用户数据的首部添加18bit的0,得到一个LDPC码块编码所需的7154bit信息位)
+        usr_data_valid = reshape(usr_data_valid, 7136, block_num)';
+        ccsds_usr_data = [zeros(block_num, 18), usr_data_valid];
+        ccsds_usr_data = reshape(ccsds_usr_data.', 1, []);
         
-        current_cell = G_sub_matrix(1, :);
-        current_row = cellfun(@(row) cat(2, row{:}), num2cell(current_cell, 2), 'UniformOutput', false);
-        
-        encoder_result = zeros(1, n);
-        check_bit = zeros(1, n-k);
-        
-        for encode_cnt = 1:k
-            encoder_result(encode_cnt) = usr_data_reg(encode_cnt);
-            if(usr_data_reg(encode_cnt) == 1) % 根据当前输入的信息位,更新校验位
-                check_bit = bitxor(check_bit, current_row{1});
-            end
-            if (mod(encode_cnt ,G_sub_matrix_size(1)) == 0 && encode_cnt~=k) % 对G矩阵的当前行进行循环移位
-                current_cell = G_sub_matrix(encode_cnt/G_sub_matrix_size(1) + 1, :);
-            else
-                current_cell = cellfun(@(x) circshift(x, [0, 1]), current_cell, 'UniformOutput', false);
-            end
-            current_row = cellfun(@(row) cat(2, row{:}), num2cell(current_cell, 2), 'UniformOutput', false);
+        % 进行(8176, 7154)LDPC编码
+        encoder_result = ldpc_encoder_core(ccsds_usr_data, 8176, 7154, G_sub_matrix, sub_matrix_size, block_num);
+    
+        % 校验编码结果是否正确
+        check_result = mod(encoder_result* H', 2);
+        if (sum(check_result(:)) ~= 0)
+            error("LDPC coding error.");
         end
-        encoder_result(k+1:n) = check_bit;
-        
-        result(block_cnt, 1:n) = encoder_result;
+
+        % 对每个LDPC码块编码得到的8176bit去除18bit虚拟填充,并在尾部添加2bit的0
+        result = [encoder_result(:, 19:end), zeros(size(encoder_result, 1), 2)];
+    else
+        % 进行(n, k)LDPC编码
+        result = ldpc_encoder_core(usr_data_valid, n, k, G_sub_matrix, sub_matrix_size, block_num);
+    
+        % 校验编码结果是否正确
+        check_result = mod(result* H', 2);
+        if (sum(check_result(:)) ~= 0)
+            error("LDPC coding error.");
+        end
     end
+
 end
