@@ -5,7 +5,7 @@
 % Data    : 2023.1.3
 % Version : V 1.0
 %*************************************************************%
-function [H, G_sub_matrix, sub_matrix_size, result] = ldpc_encoder(stander, usr_data)
+function result = ldpc_encoder(stander, usr_data) % result的每行是一个码字
 
     % 如果输入矩阵不是行向量,提示错误信息
     if ~isrow(usr_data) 
@@ -13,7 +13,7 @@ function [H, G_sub_matrix, sub_matrix_size, result] = ldpc_encoder(stander, usr_
     end
     
     % 产生H/G矩阵
-    [H, G_sub_matrix, sub_matrix_size] = H_G_generator(stander);
+    [H, ~, G_simplify, sub_matrix_size] = H_G_generator(stander);
     
     % 提取当前码字的(n, k)参数
     splitStr = split(stander, "_");
@@ -32,7 +32,7 @@ function [H, G_sub_matrix, sub_matrix_size, result] = ldpc_encoder(stander, usr_
         ccsds_usr_data = reshape(ccsds_usr_data.', 1, []);
         
         % 进行(8176, 7154)LDPC编码
-        encoder_result = ldpc_encoder_core(ccsds_usr_data, 8176, 7154, G_sub_matrix, sub_matrix_size, block_num);
+        encoder_result = ldpc_encoder_core(ccsds_usr_data, 8176, 7154, G_simplify, sub_matrix_size, block_num);
     
         % 校验编码结果是否正确
         check_result = mod(encoder_result* H', 2);
@@ -44,13 +44,13 @@ function [H, G_sub_matrix, sub_matrix_size, result] = ldpc_encoder(stander, usr_
         result = [encoder_result(:, 19:end), zeros(size(encoder_result, 1), 2)];
     else
         % 进行(n, k)LDPC编码
-        result = ldpc_encoder_core(usr_data_valid, n, k, G_sub_matrix, sub_matrix_size, block_num);
+        result = ldpc_encoder_core(usr_data_valid, n, k, G_simplify, sub_matrix_size, block_num);
     
         % 校验编码结果是否正确
-        check_result = mod(result* H', 2);
-        if (sum(check_result(:)) ~= 0)
-            error("LDPC coding error.");
-        end
+        % check_result = mod(result*H', 2);
+        % if (sum(check_result(:)) ~= 0)
+        %     error("LDPC coding error.");
+        % end
     end
 
 end

@@ -21,11 +21,14 @@ splitStr = split(stander, "_");
 n = str2double(splitStr{1});
 k = str2double(splitStr{2});
 
+% 生成H矩阵及G矩阵
+[H, G, G_simplify, sub_matrix_size] = H_G_generator(stander);
+
 % 产生用户数据
 usr_data = m_sequence([1 0 0 0 0 0 0 0 0 0], [1 0 0 0 0 0 0 1 0 0 1], k*block_num);
 
 % 进行编码
-[~, G_sub_matrix, sub_matrix_size, encoder_result] = ldpc_encoder(stander, usr_data);
+encoder_result = ldpc_encoder(stander, usr_data);
 
 % 进行电平映射(0对应+1,1对应-1)并加入高斯白噪声
 tx_data = reshape(encoder_result.', 1, []);

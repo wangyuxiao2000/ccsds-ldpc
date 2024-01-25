@@ -55,6 +55,118 @@ begin
                       );
 end
 
+else if(stander == "1280,1024")
+begin
+  encoder_1280_1024 U1(.clk(clk),
+                       .rst_n(rst_n),
+                       .s_axis_tdata(s_axis_tdata),
+                       .s_axis_tvalid(s_axis_tvalid),
+                       .s_axis_tready(s_axis_tready),
+                       .m_axis_tdata(m_axis_tdata),
+                       .m_axis_tvalid(m_axis_tvalid),
+                       .m_axis_tlast(m_axis_tlast),
+                       .m_axis_tready(m_axis_tready)
+                      );
+end
+
+else if(stander == "1536,1024")
+begin
+  encoder_1536_1024 U1(.clk(clk),
+                       .rst_n(rst_n),
+                       .s_axis_tdata(s_axis_tdata),
+                       .s_axis_tvalid(s_axis_tvalid),
+                       .s_axis_tready(s_axis_tready),
+                       .m_axis_tdata(m_axis_tdata),
+                       .m_axis_tvalid(m_axis_tvalid),
+                       .m_axis_tlast(m_axis_tlast),
+                       .m_axis_tready(m_axis_tready)
+                      );
+end
+
+else if(stander == "2048,1024")
+begin
+  encoder_2048_1024 U1(.clk(clk),
+                       .rst_n(rst_n),
+                       .s_axis_tdata(s_axis_tdata),
+                       .s_axis_tvalid(s_axis_tvalid),
+                       .s_axis_tready(s_axis_tready),
+                       .m_axis_tdata(m_axis_tdata),
+                       .m_axis_tvalid(m_axis_tvalid),
+                       .m_axis_tlast(m_axis_tlast),
+                       .m_axis_tready(m_axis_tready)
+                      );
+end
+
+else if(stander == "5120,4096")
+begin
+  encoder_5120_4096 U1(.clk(clk),
+                       .rst_n(rst_n),
+                       .s_axis_tdata(s_axis_tdata),
+                       .s_axis_tvalid(s_axis_tvalid),
+                       .s_axis_tready(s_axis_tready),
+                       .m_axis_tdata(m_axis_tdata),
+                       .m_axis_tvalid(m_axis_tvalid),
+                       .m_axis_tlast(m_axis_tlast),
+                       .m_axis_tready(m_axis_tready)
+                      );
+end
+
+else if(stander == "6144,4096")
+begin
+  encoder_6144_4096 U1(.clk(clk),
+                       .rst_n(rst_n),
+                       .s_axis_tdata(s_axis_tdata),
+                       .s_axis_tvalid(s_axis_tvalid),
+                       .s_axis_tready(s_axis_tready),
+                       .m_axis_tdata(m_axis_tdata),
+                       .m_axis_tvalid(m_axis_tvalid),
+                       .m_axis_tlast(m_axis_tlast),
+                       .m_axis_tready(m_axis_tready)
+                      );
+end
+
+else if(stander == "8192,4096")
+begin
+  encoder_8192_4096 U1(.clk(clk),
+                       .rst_n(rst_n),
+                       .s_axis_tdata(s_axis_tdata),
+                       .s_axis_tvalid(s_axis_tvalid),
+                       .s_axis_tready(s_axis_tready),
+                       .m_axis_tdata(m_axis_tdata),
+                       .m_axis_tvalid(m_axis_tvalid),
+                       .m_axis_tlast(m_axis_tlast),
+                       .m_axis_tready(m_axis_tready)
+                      );
+end
+
+else if(stander == "20480,16384")
+begin
+  encoder_20480_16384 U1(.clk(clk),
+                         .rst_n(rst_n),
+                         .s_axis_tdata(s_axis_tdata),
+                         .s_axis_tvalid(s_axis_tvalid),
+                         .s_axis_tready(s_axis_tready),
+                         .m_axis_tdata(m_axis_tdata),
+                         .m_axis_tvalid(m_axis_tvalid),
+                         .m_axis_tlast(m_axis_tlast),
+                         .m_axis_tready(m_axis_tready)
+                        );
+end
+
+else if(stander == "24756,16384")
+begin
+  encoder_24576_16384 U1(.clk(clk),
+                         .rst_n(rst_n),
+                         .s_axis_tdata(s_axis_tdata),
+                         .s_axis_tvalid(s_axis_tvalid),
+                         .s_axis_tready(s_axis_tready),
+                         .m_axis_tdata(m_axis_tdata),
+                         .m_axis_tvalid(m_axis_tvalid),
+                         .m_axis_tlast(m_axis_tlast),
+                         .m_axis_tready(m_axis_tready)
+                        );
+end
+
 else
 begin
   
