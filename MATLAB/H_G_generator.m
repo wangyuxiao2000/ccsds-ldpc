@@ -7,7 +7,7 @@
 %*************************************************************%
 function [H, G, G_simplify, sub_matrix_size] = H_G_generator(stander)
     
-    if (stander == "8176_7154" || stander == "8160_7136")
+    if stander=="8176_7154" || stander=="8160_7136"
         % 定义H矩阵及G矩阵(CCSDS 131.1-O-1)
         G_path = "NEAR_EARTH_G.txt";
         H_path = "NEAR_EARTH_H.txt";

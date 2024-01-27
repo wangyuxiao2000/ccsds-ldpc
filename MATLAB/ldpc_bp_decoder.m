@@ -8,7 +8,7 @@
 function [result_message, result_full, right_flag] = ldpc_bp_decoder(stander, rx_simple, sigma2, iteratio_max)
     
     % 如果输入矩阵不是行向量,提示错误信息
-    if ~isrow(rx_simple) 
+    if size(rx_simple, 1) ~= 1
         error("Input must be a row vector.");
     end
     
@@ -32,8 +32,36 @@ function [result_message, result_full, right_flag] = ldpc_bp_decoder(stander, rx
         [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, 8176, 7154, H, block_num, sigma2, iteratio_max);
         result_message = result_message(:, 19:end);
         result_full = [result_full(:, 19:end), zeros(size(result_full, 1), 2)];
-    else
+    elseif (stander == "8176_7154")
         [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, n, k, H, block_num, sigma2, iteratio_max);
+    else
+        switch stander
+            case "1280_1024"
+                M = 128;                
+            case "1536_1024"
+                M = 256;
+            case "2048_1024"
+                M = 512;
+            case "5120_4096"
+                M = 512;
+            case "6144_4096"
+                M = 1024;
+            case "8192_4096"
+                M = 2048;
+            case "20480_16384"
+                M = 2048;
+            case "24576_16384"
+                M = 4096;
+            case "32768_16384"
+                M = 8192;
+            otherwise
+                error("Unsupported code type");
+        end
+        dummy_bit = zeros(1, M); % 对打孔位置填充0信息,使这些比特节点关于-1的后验概率p_i=1
+        yi = reshape(yi, n, block_num).';
+        yi = [yi repmat(dummy_bit, block_num, 1)];
+        yi = reshape(yi.', 1, []);
+        [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, n+M, k, H, block_num, sigma2, iteratio_max);
     end
     
 end

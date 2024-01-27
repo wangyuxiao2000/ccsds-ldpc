@@ -45,7 +45,7 @@ switch stander
         M = 8192;
         pi_tot = 8;
     otherwise
-        error("不支持的码型");
+        error("Unsupported code type");
 end
 
 % 生成Π矩阵

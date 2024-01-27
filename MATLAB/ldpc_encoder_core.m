@@ -7,6 +7,11 @@
 %*************************************************************%
 function [result] = ldpc_encoder_core(usr_data, n, k, G_sub_matrix, G_sub_matrix_size, block_num)
     
+    % 如果输入矩阵不是行向量,提示错误信息
+    if size(usr_data, 1) ~= 1
+        error("Input must be a row vector.");
+    end
+    
     % 声明输出矩阵维度
     result = zeros(block_num, n);
     
@@ -22,12 +27,12 @@ function [result] = ldpc_encoder_core(usr_data, n, k, G_sub_matrix, G_sub_matrix
         
         for encode_cnt = 1:k
             encoder_result(encode_cnt) = usr_data_reg(encode_cnt);
-            if(usr_data_reg(encode_cnt) == 1) % 根据当前输入的信息位,更新校验位
+            if usr_data_reg(encode_cnt) == 1 % 根据当前输入的信息位,更新校验位
                 check_bit = bitxor(check_bit, current_row{1});
             end
-            if (mod(encode_cnt ,G_sub_matrix_size(1)) == 0 && encode_cnt~=k) % 对G矩阵的当前行进行循环移位
+            if mod(encode_cnt, G_sub_matrix_size(1))==0 && encode_cnt~=k % 切换G矩阵子块
                 current_cell = G_sub_matrix(encode_cnt/G_sub_matrix_size(1) + 1, :);
-            else
+            else % 对G矩阵的当前行进行循环移位
                 current_cell = cellfun(@(x) circshift(x, [0, 1]), current_cell, 'UniformOutput', false);
             end
             current_row = cellfun(@(row) cat(2, row{:}), num2cell(current_cell, 2), 'UniformOutput', false);

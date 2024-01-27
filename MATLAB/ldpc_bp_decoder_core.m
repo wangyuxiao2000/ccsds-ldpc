@@ -7,6 +7,11 @@
 %*************************************************************%
 function [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, n, k, H, block_num, sigma2, iteratio_max)
    
+    % 如果输入矩阵不是行向量,提示错误信息
+    if size(yi, 1) ~= 1
+        error("Input must be a row vector.");
+    end
+    
     % 声明输出矩阵维度
     result_message = zeros(block_num, k);
     result_full = zeros(block_num, n);
@@ -19,7 +24,7 @@ function [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, n,
         decision(yi_reg <= 0) = 1;        % +1对应0,-1对应1
         check = sum(mod(decision*H', 2)); % 若硬判决结果能够正确译码(check为0),则不进行软迭代
 
-        if(check~=0)
+        if check ~= 0
             % 初始化迭代次数
             num = 0;
 
@@ -41,7 +46,7 @@ function [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, n,
             check_node = zeros(2, size(check2bit, 2));            % 第一行为r_ji(+1),第二行为r_ji(-1)
         end
 
-        while(check~=0 && num<iteratio_max)
+        while check~=0 && num<iteratio_max
             % 由上一次的q_ij更新校验节点的r_ji
             for cnt = 1:size(check2bit, 2)
                 indices = find(bit2check(2, :) == check2bit(1, cnt) & bit2check(1, :) ~= check2bit(2, cnt));
