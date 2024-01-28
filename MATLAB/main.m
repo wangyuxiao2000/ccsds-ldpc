@@ -4,15 +4,15 @@ close all;
 clc;
 
 % 设定参数
-stander = "1280_1024"; % 设定码长:
+stander = "8160_7136"; % 设定码长:
                        % 对于近地应用可选"8176_7154"、"8160_7136"
                        % 对于深空应用可选"1280_1024"、"1536_1024"、"2048_1024"
-                       %                 "5120_4096"、"6144_4096"、"8192_4096"
-                       %                 "20480_16384"、"24576_16384"、"32768_16384"
+                       %                "5120_4096"、"6144_4096"、"8192_4096"
+                       %                "20480_16384"、"24576_16384"、"32768_16384"
 Eb_N0_request_min = 2.5;   % Eb_N0最小值(dB)
 Eb_N0_request_max = 4;     % Eb_N0最大值(dB)
-Eb_N0_request_step = 0.05; % Eb_N0步进值(dB)
-block_num = 50;            % 每个信噪比下仿真码块的个数
+Eb_N0_request_step = 0.1;  % Eb_N0步进值(dB)
+block_num = 100;           % 每个信噪比下仿真码块的个数
 iteratio_max = [10, 50];   % 最大迭代次数
 
 % 提取当前码字的(n, k)参数
@@ -33,7 +33,7 @@ for Eb_N0_cnt = 1:length(Eb_N0_request)
     usr_data = m_sequence([1 0 0 0 0 0 0 0 0 0], [1 0 0 0 0 0 0 1 0 0 1], k*block_num);
     
     % 进行LDPC编码
-    [~, ~, ~, encoder_result] = ldpc_encoder(stander, usr_data);
+    encoder_result = ldpc_encoder(stander, usr_data);
     
     % 进行电平映射(0对应+1,1对应-1)并加入高斯白噪声
     tx_data = reshape(encoder_result.', 1, []);
@@ -45,7 +45,9 @@ for Eb_N0_cnt = 1:length(Eb_N0_request)
     for iteratio_max_cnt = 1:length(iteratio_max)
         [result, ~, right_flag] = ldpc_bp_decoder(stander, rx_simple, sigma2, iteratio_max(iteratio_max_cnt)); 
         ber(iteratio_max_cnt, Eb_N0_cnt) = nnz(reshape(result.', 1, []) ~= usr_data)/numel(usr_data);
+        disp(iteratio_max_cnt);
     end
+    disp(Eb_N0_cnt);
 end
 
 % 绘制误码率曲线

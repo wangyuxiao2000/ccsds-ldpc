@@ -60,17 +60,17 @@ function [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, n,
                 bit_node(:, cnt) = bit_node(:, cnt) ./ sum(bit_node(:, cnt));
             end
 
-            % 由刚刚得到的r_ji计算APP似然比
-            APP = zeros(2, size(H, 2));
-            for cnt = 1:size(H, 2)
+            % 由刚刚得到的r_ji计算似然比
+            Q = zeros(2, n);
+            for cnt = 1:n
                 indices = find(check2bit(2, :) == cnt);
-                APP(:, cnt) = [(1 - p_i(cnt)) * prod(check_node(1, indices)); p_i(cnt) * prod(check_node(2, indices))];
-                APP(:, cnt) = APP(:, cnt) ./ sum(APP(:, cnt));
+                Q(:, cnt) = [(1 - p_i(cnt)) * prod(check_node(1, indices)); p_i(cnt) * prod(check_node(2, indices))];
+                Q(:, cnt) = Q(:, cnt) ./ sum(Q(:, cnt));
             end
 
             % 根据似然比进行硬判决及校验
-            decision = zeros(1, size(H, 2));
-            decision(APP(1, :) <= 0.5) = 1; % +1对应0,-1对应1
+            decision = zeros(1, n);
+            decision(Q(1, :) <= 0.5) = 1; % +1对应0,-1对应1
             check = sum(mod(decision*H', 2));
             num = num + 1;
         end
