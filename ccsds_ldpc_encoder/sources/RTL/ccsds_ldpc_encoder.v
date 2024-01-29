@@ -167,6 +167,20 @@ begin
                         );
 end
 
+else if(stander == "32768,16384")
+begin
+  encoder_32768_16384 U1(.clk(clk),
+                         .rst_n(rst_n),
+                         .s_axis_tdata(s_axis_tdata),
+                         .s_axis_tvalid(s_axis_tvalid),
+                         .s_axis_tready(s_axis_tready),
+                         .m_axis_tdata(m_axis_tdata),
+                         .m_axis_tvalid(m_axis_tvalid),
+                         .m_axis_tlast(m_axis_tlast),
+                         .m_axis_tready(m_axis_tready)
+                        );
+end
+
 else
 begin
   

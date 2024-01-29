@@ -165,7 +165,7 @@ begin
                                  sub_size*5-1 : g<={G6_1,G6_2,G6_3,G6_4,G6_5,G6_6,G6_7,G6_8};
                                  sub_size*6-1 : g<={G7_1,G7_2,G7_3,G7_4,G7_5,G7_6,G7_7,G7_8};
                                  sub_size*7-1 : g<={G8_1,G8_2,G8_3,G8_4,G8_5,G8_6,G8_7,G8_8};
-                                 sub_size*8-1 :g<={G1_1,G1_2,G1_3,G1_4,G1_5,G1_6,G1_7,G1_8};
+                                 sub_size*8-1 : g<={G1_1,G1_2,G1_3,G1_4,G1_5,G1_6,G1_7,G1_8};
                                  default : g<={{g[sub_size*7],g[sub_size*8-1:sub_size*7+1]},
                                                {g[sub_size*6],g[sub_size*7-1:sub_size*6+1]},
                                                {g[sub_size*5],g[sub_size*6-1:sub_size*5+1]},

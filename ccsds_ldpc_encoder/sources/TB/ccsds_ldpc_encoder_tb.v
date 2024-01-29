@@ -33,7 +33,7 @@ reg m_tready;
 
 
 /************************例化待测模块************************/
-ccsds_ldpc_encoder #(.stander("24756,16384")
+ccsds_ldpc_encoder #(.stander("8160,7136")
                     ) i1 (.clk(clk),
                           .rst_n(rst_n),
                           .s_axis_tdata(s_tdata),
