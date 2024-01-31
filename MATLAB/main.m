@@ -1,3 +1,10 @@
+%*************************************************************%
+% function: LDPC 误码曲线仿真
+% Author  : WangYuxiao
+% Email   : wyxee2000@163.com
+% Data    : 2024.1.26
+% Version : V 1.0
+%*************************************************************%
 % 初始化
 clear; 
 close all;
@@ -14,6 +21,7 @@ Eb_N0_request_max = 4;     % Eb_N0最大值(dB)
 Eb_N0_request_step = 0.1;  % Eb_N0步进值(dB)
 block_num = 100;           % 每个信噪比下仿真码块的个数
 iteratio_max = [10, 50];   % 最大迭代次数
+method = "LLR BP";         % 设定解码算法,可选"BP"/"LLR BP"/"UMP BP"
 
 % 提取当前码字的(n, k)参数
 splitStr = split(stander, "_");
@@ -43,7 +51,7 @@ for Eb_N0_cnt = 1:length(Eb_N0_request)
     
     % 在不同的最大迭代次数下,进行概率域BP译码并计算误码率
     for iteratio_max_cnt = 1:length(iteratio_max)
-        [result, ~, right_flag] = ldpc_bp_decoder(stander, rx_simple, sigma2, iteratio_max(iteratio_max_cnt)); 
+        [result, ~, right_flag] = ldpc_bp_decoder(stander, rx_simple, sigma2, iteratio_max(iteratio_max_cnt), method); 
         ber(iteratio_max_cnt, Eb_N0_cnt) = nnz(reshape(result.', 1, []) ~= usr_data)/numel(usr_data);
         disp(iteratio_max_cnt);
     end

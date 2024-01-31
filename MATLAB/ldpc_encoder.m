@@ -2,7 +2,7 @@
 % function: QC-LDPC编码(适配CCSDS协议)
 % Author  : WangYuxiao
 % Email   : wyxee2000@163.com
-% Data    : 2023.1.3
+% Data    : 2024.1.3
 % Version : V 1.0
 %*************************************************************%
 function result = ldpc_encoder(stander, usr_data) % result的每行是一个码字

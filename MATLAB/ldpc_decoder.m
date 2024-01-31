@@ -33,6 +33,8 @@ function [result_message, result_full, right_flag] = ldpc_decoder(stander, rx_si
             [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, 8176, 7154, H, block_num, sigma2, iteratio_max);
         elseif method == "LLR BP"
             [result_message, result_full, right_flag] = ldpc_llr_bp_decoder_core(yi, 8176, 7154, H, block_num, sigma2, iteratio_max);
+        elseif method == "UMP BP"
+            [result_message, result_full, right_flag] = ldpc_ump_bp_decoder_core(yi, 8176, 7154, H, block_num, iteratio_max);
         else
             error("Unsupported decoding method.");
         end
@@ -43,6 +45,8 @@ function [result_message, result_full, right_flag] = ldpc_decoder(stander, rx_si
             [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, n, k, H, block_num, sigma2, iteratio_max);
         elseif method == "LLR BP"
             [result_message, result_full, right_flag] = ldpc_llr_bp_decoder_core(yi, n, k, H, block_num, sigma2, iteratio_max);
+        elseif method == "UMP BP"
+            [result_message, result_full, right_flag] = ldpc_ump_bp_decoder_core(yi, n, k, H, block_num, iteratio_max);
         else
             error("Unsupported decoding method.");
         end
@@ -77,6 +81,8 @@ function [result_message, result_full, right_flag] = ldpc_decoder(stander, rx_si
             [result_message, result_full, right_flag] = ldpc_bp_decoder_core(yi, n+M, k, H, block_num, sigma2, iteratio_max);
         elseif method == "LLR BP"
             [result_message, result_full, right_flag] = ldpc_llr_bp_decoder_core(yi, n+M, k, H, block_num, sigma2, iteratio_max);
+        elseif method == "UMP BP"
+            [result_message, result_full, right_flag] = ldpc_ump_bp_decoder_core(yi, n+M, k, H, block_num, iteratio_max);
         else
             error("Unsupported decoding method.");
         end

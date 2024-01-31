@@ -5,7 +5,7 @@
 % Data    : 2023.12.21
 % Version : V 1.0
 %*************************************************************%
-function [result] = ldpc_encoder_core(usr_data, n, k, G_sub_matrix, G_sub_matrix_size, block_num)
+function result = ldpc_encoder_core(usr_data, n, k, G_sub_matrix, G_sub_matrix_size, block_num)
     
     % 如果输入矩阵不是行向量,提示错误信息
     if size(usr_data, 1) ~= 1
