@@ -11,14 +11,14 @@ close all;
 clc;
 
 % 设定参数
-stander = "1280_1024"; % 设定码长:
+stander = "2048_1024"; % 设定码长:
                        % 对于近地应用可选"8176_7154"、"8160_7136"
                        % 对于深空应用可选"1280_1024"、"1536_1024"、"2048_1024"
-                       %                 "5120_4096"、"6144_4096"、"8192_4096"
-                       %                 "20480_16384"、"24576_16384"、"32768_16384"
+                       %                "5120_4096"、"6144_4096"、"8192_4096"
+                       %                "20480_16384"、"24576_16384"、"32768_16384"
 block_num = 10;        % 设定仿真码块数
 Eb_N0_request = 3;     % 设定仿真信噪比
-iteratio_max = 10;     % 设定解码最大迭代次数
+iteratio_max = 20;     % 设定解码最大迭代次数
 
 % 提取当前码字的(n, k)参数
 splitStr = split(stander, "_");
@@ -38,7 +38,9 @@ encoder_result = ldpc_encoder(stander, usr_data);
 tx_data = reshape(encoder_result.', 1, []);
 xi = ones(1,length(tx_data));
 xi(tx_data == 1) = -1;
-[rx_simple, Eb_N0_real, sigma2] = ldpc_noise_adder(xi, Eb_N0_request);
+[rx_simple, Eb_N0_real, sigma2] = ldpc_noise_adder(xi, Eb_N0_request, n, k);
+
+rx_simple = 2*rx_simple/max(abs(rx_simple)); % 确保接收信号幅度位于[-2,2]之间
 
 % 通过硬判决直接提取信息位
 hard_bit = zeros(1, n*block_num);
