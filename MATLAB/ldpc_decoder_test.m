@@ -26,7 +26,7 @@ n = str2double(splitStr{1});
 k = str2double(splitStr{2});
 
 % 生成H矩阵及G矩阵
-[H, G, G_simplify, sub_matrix_size] = H_G_generator(stander);
+[H, H_simplify, sub_matrix_size_H, G, G_simplify, sub_matrix_size_G] = H_G_generator(stander);
 
 % 产生用户数据
 usr_data = m_sequence([1 0 0 0 0 0 0 0 0 0], [1 0 0 0 0 0 0 1 0 0 1], k*block_num);

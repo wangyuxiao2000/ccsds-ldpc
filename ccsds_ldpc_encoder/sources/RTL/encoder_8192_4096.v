@@ -9,6 +9,7 @@
 
 module encoder_8192_4096 (clk,rst_n,s_axis_tdata,s_axis_tvalid,s_axis_tready,m_axis_tdata,m_axis_tvalid,m_axis_tlast,m_axis_tready);
 /************************************************生成矩阵设置************************************************/
+parameter width = 8; /*支持1、2、4、8、16、32、64*/
 localparam n = 8192;
 localparam k = 4096;
 localparam sub_size = 512;
@@ -77,17 +78,17 @@ localparam G8_6 = 512'h86A5A2038BB67CF8225BCCF7A587E0D09B47D26BC4DB017F6A77B6DEC
 localparam G8_7 = 512'hAD845A43D23E66FBA72D9D56457D66C7E44D98ED1E5F1D063A5D01043930E9C2EDED8BA9DEE5F9DFF91CD887F097B9A2DF0099E278C253E0A549C7A2D81078C6;
 localparam G8_8 = 512'h680566EA7A1E724A99B5D7099AED278A3065BBC64BED441154DCD346D38C9771648D55656B16CF012D0C6EC8F616D3B758089A8147D731AE077D557204256F93;
 /***********************************************************************************************************/
-input clk;                 /*系统时钟*/
-input rst_n;               /*低电平异步复位信号*/
+input clk;                             /*系统时钟*/
+input rst_n;                           /*低电平异步复位信号*/
 
-input s_axis_tdata;        /*输入数据*/
-input s_axis_tvalid;       /*输入数据有效标志,高电平有效*/
-output reg s_axis_tready;  /*向上游模块发送读请求或读确认信号,高电平有效*/
+input [width-1:0] s_axis_tdata;        /*输入数据*/
+input s_axis_tvalid;                   /*输入数据有效标志,高电平有效*/
+output reg s_axis_tready;              /*向上游模块发送读请求或读确认信号,高电平有效*/
 
-output reg m_axis_tdata;   /*输出数据*/
-output reg m_axis_tvalid;  /*输出数据有效标志,高电平有效*/
-output reg m_axis_tlast;   /*码块结束标志位，每完成一个LDPC码块的输出拉高一次*/
-input m_axis_tready;       /*下游模块传来的读请求或读确认信号,高电平有效*/
+output reg [width-1:0] m_axis_tdata;   /*输出数据*/
+output reg m_axis_tvalid;              /*输出数据有效标志,高电平有效*/
+output reg m_axis_tlast;               /*码块结束标志位，每完成一个LDPC码块的输出拉高一次*/
+input m_axis_tready;                   /*下游模块传来的读请求或读确认信号,高电平有效*/
 
 
 
@@ -100,6 +101,42 @@ reg [2:0] state;               /*状态机*/
 reg [$clog2(n):0] in_out_cnt;  /*输入/输出计数器*/
 reg [n-k-1:0] g;               /*生成矩阵当前所在行*/
 reg [n-k-1:0] check;           /*校验位*/
+
+wire [n-k-1:0] check_sub [width-1:0];
+wire [n-k-1:0] check_reg;
+
+assign check_sub[width-1]=m_axis_tdata[width-1]?g:0;
+genvar i;
+generate
+for(i=0;i<=width-2;i=i+1)
+begin
+  assign check_sub[i]=m_axis_tdata[i]?({{g[sub_size*7+width-1-i-1:sub_size*7],g[sub_size*8-1:sub_size*7+width-1-i]},
+                                        {g[sub_size*6+width-1-i-1:sub_size*6],g[sub_size*7-1:sub_size*6+width-1-i]},
+                                        {g[sub_size*5+width-1-i-1:sub_size*5],g[sub_size*6-1:sub_size*5+width-1-i]},
+                                        {g[sub_size*4+width-1-i-1:sub_size*4],g[sub_size*5-1:sub_size*4+width-1-i]},
+                                        {g[sub_size*3+width-1-i-1:sub_size*3],g[sub_size*4-1:sub_size*3+width-1-i]},
+                                        {g[sub_size*2+width-1-i-1:sub_size*2],g[sub_size*3-1:sub_size*2+width-1-i]},
+                                        {g[sub_size*1+width-1-i-1:sub_size*1],g[sub_size*2-1:sub_size*1+width-1-i]},
+                                        {g[sub_size*0+width-1-i-1:sub_size*0],g[sub_size*1-1:sub_size*0+width-1-i]}}):0;
+end
+endgenerate
+
+generate
+if(width==1)
+  assign check_reg=check_sub[0];
+else if(width==2)
+  assign check_reg=check_sub[0]^check_sub[1];
+else if(width==4)
+  assign check_reg=check_sub[0]^check_sub[1]^check_sub[2]^check_sub[3];
+else if(width==8)
+  assign check_reg=check_sub[0]^check_sub[1]^check_sub[2]^check_sub[3]^check_sub[4]^check_sub[5]^check_sub[6]^check_sub[7];
+else if(width==16)
+  assign check_reg=check_sub[0]^check_sub[1]^check_sub[2]^check_sub[3]^check_sub[4]^check_sub[5]^check_sub[6]^check_sub[7]^check_sub[8]^check_sub[9]^check_sub[10]^check_sub[11]^check_sub[12]^check_sub[13]^check_sub[14]^check_sub[15];
+else if(width==32)
+  assign check_reg=check_sub[0]^check_sub[1]^check_sub[2]^check_sub[3]^check_sub[4]^check_sub[5]^check_sub[6]^check_sub[7]^check_sub[8]^check_sub[9]^check_sub[10]^check_sub[11]^check_sub[12]^check_sub[13]^check_sub[14]^check_sub[15]^check_sub[16]^check_sub[17]^check_sub[18]^check_sub[19]^check_sub[20]^check_sub[21]^check_sub[22]^check_sub[23]^check_sub[24]^check_sub[25]^check_sub[26]^check_sub[27]^check_sub[28]^check_sub[29]^check_sub[30]^check_sub[31];
+else
+  assign check_reg=check_sub[0]^check_sub[1]^check_sub[2]^check_sub[3]^check_sub[4]^check_sub[5]^check_sub[6]^check_sub[7]^check_sub[8]^check_sub[9]^check_sub[10]^check_sub[11]^check_sub[12]^check_sub[13]^check_sub[14]^check_sub[15]^check_sub[16]^check_sub[17]^check_sub[18]^check_sub[19]^check_sub[20]^check_sub[21]^check_sub[22]^check_sub[23]^check_sub[24]^check_sub[25]^check_sub[26]^check_sub[27]^check_sub[28]^check_sub[29]^check_sub[30]^check_sub[31]^check_sub[32]^check_sub[33]^check_sub[34]^check_sub[35]^check_sub[36]^check_sub[37]^check_sub[38]^check_sub[39]^check_sub[40]^check_sub[41]^check_sub[42]^check_sub[43]^check_sub[44]^check_sub[45]^check_sub[46]^check_sub[47]^check_sub[48]^check_sub[49]^check_sub[50]^check_sub[51]^check_sub[52]^check_sub[53]^check_sub[54]^check_sub[55]^check_sub[56]^check_sub[57]^check_sub[58]^check_sub[59]^check_sub[60]^check_sub[61]^check_sub[62]^check_sub[63];
+endgenerate
 
 always@(posedge clk or negedge rst_n)
 begin
@@ -120,7 +157,6 @@ begin
         STATE_waiting_data_in : begin
                                   in_out_cnt<=in_out_cnt;
                                   g<=g;
-                                  check<=check;
                                   m_axis_tlast<=0;
                                   if(s_axis_tready&&s_axis_tvalid)
                                     begin
@@ -144,8 +180,8 @@ begin
                            if(m_axis_tready&&m_axis_tvalid)
                              begin
                                m_axis_tvalid<=0;
-                               check<=check^(m_axis_tdata?g:0);
-                               if(in_out_cnt==k-1)
+                               check<=check^check_reg;  
+                               if(in_out_cnt==k-width)
                                  begin
                                    in_out_cnt<=0;
                                    s_axis_tready<=0;
@@ -153,27 +189,27 @@ begin
                                  end
                                else
                                  begin
-                                   in_out_cnt<=in_out_cnt+1;
+                                   in_out_cnt<=in_out_cnt+width;
                                    s_axis_tready<=1;
                                    state<=STATE_waiting_data_in;                     
                                  end
                                case(in_out_cnt)
-                                 sub_size*1-1 : g<={G2_1,G2_2,G2_3,G2_4,G2_5,G2_6,G2_7,G2_8};
-                                 sub_size*2-1 : g<={G3_1,G3_2,G3_3,G3_4,G3_5,G3_6,G3_7,G3_8};
-                                 sub_size*3-1 : g<={G4_1,G4_2,G4_3,G4_4,G4_5,G4_6,G4_7,G4_8};
-                                 sub_size*4-1 : g<={G5_1,G5_2,G5_3,G5_4,G5_5,G5_6,G5_7,G5_8};
-                                 sub_size*5-1 : g<={G6_1,G6_2,G6_3,G6_4,G6_5,G6_6,G6_7,G6_8};
-                                 sub_size*6-1 : g<={G7_1,G7_2,G7_3,G7_4,G7_5,G7_6,G7_7,G7_8};
-                                 sub_size*7-1 : g<={G8_1,G8_2,G8_3,G8_4,G8_5,G8_6,G8_7,G8_8};
-                                 sub_size*8-1 : g<={G1_1,G1_2,G1_3,G1_4,G1_5,G1_6,G1_7,G1_8};
-                                 default : g<={{g[sub_size*7],g[sub_size*8-1:sub_size*7+1]},
-                                               {g[sub_size*6],g[sub_size*7-1:sub_size*6+1]},
-                                               {g[sub_size*5],g[sub_size*6-1:sub_size*5+1]},
-                                               {g[sub_size*4],g[sub_size*5-1:sub_size*4+1]},
-                                               {g[sub_size*3],g[sub_size*4-1:sub_size*3+1]},
-                                               {g[sub_size*2],g[sub_size*3-1:sub_size*2+1]},
-                                               {g[sub_size*1],g[sub_size*2-1:sub_size*1+1]},
-                                               {g[sub_size*0],g[sub_size*1-1:sub_size*0+1]}
+                                 sub_size*1-width : g<={G2_1,G2_2,G2_3,G2_4,G2_5,G2_6,G2_7,G2_8};
+                                 sub_size*2-width : g<={G3_1,G3_2,G3_3,G3_4,G3_5,G3_6,G3_7,G3_8};
+                                 sub_size*3-width : g<={G4_1,G4_2,G4_3,G4_4,G4_5,G4_6,G4_7,G4_8};
+                                 sub_size*4-width : g<={G5_1,G5_2,G5_3,G5_4,G5_5,G5_6,G5_7,G5_8};
+                                 sub_size*5-width : g<={G6_1,G6_2,G6_3,G6_4,G6_5,G6_6,G6_7,G6_8};
+                                 sub_size*6-width : g<={G7_1,G7_2,G7_3,G7_4,G7_5,G7_6,G7_7,G7_8};
+                                 sub_size*7-width : g<={G8_1,G8_2,G8_3,G8_4,G8_5,G8_6,G8_7,G8_8};
+                                 sub_size*8-width : g<={G1_1,G1_2,G1_3,G1_4,G1_5,G1_6,G1_7,G1_8};
+                                 default : g<={{g[sub_size*7+width-1:sub_size*7],g[sub_size*8-1:sub_size*7+width]},
+                                               {g[sub_size*6+width-1:sub_size*6],g[sub_size*7-1:sub_size*6+width]},
+                                               {g[sub_size*5+width-1:sub_size*5],g[sub_size*6-1:sub_size*5+width]},
+                                               {g[sub_size*4+width-1:sub_size*4],g[sub_size*5-1:sub_size*4+width]},
+                                               {g[sub_size*3+width-1:sub_size*3],g[sub_size*4-1:sub_size*3+width]},
+                                               {g[sub_size*2+width-1:sub_size*2],g[sub_size*3-1:sub_size*2+width]},
+                                               {g[sub_size*1+width-1:sub_size*1],g[sub_size*2-1:sub_size*1+width]},
+                                               {g[sub_size*0+width-1:sub_size*0],g[sub_size*1-1:sub_size*0+width]}
                                               };
                                endcase
                              end
@@ -181,7 +217,6 @@ begin
                              begin
                                in_out_cnt<=in_out_cnt;
                                g<=g;
-                               check<=check;
                                s_axis_tready<=0;
                                m_axis_tvalid<=m_axis_tvalid;
                                state<=state;
@@ -195,14 +230,14 @@ begin
                                 in_out_cnt<=in_out_cnt;
                                 check<=check;
                                 s_axis_tready<=0;
-                                m_axis_tdata<=check[n-k-1];
+                                m_axis_tdata<=check[n-k-1:n-k-width];
                                 m_axis_tvalid<=1;
                                 m_axis_tlast<=0;
                                 state<=state;
                               end
                             else if(m_axis_tready&&m_axis_tvalid)
                               begin
-                                if(in_out_cnt==n-k-1)
+                                if(in_out_cnt==n-k-width)
                                   begin
                                     in_out_cnt<=0;
                                     check<=0;
@@ -212,22 +247,22 @@ begin
                                     m_axis_tlast<=0;
                                     state<=STATE_waiting_data_in;
                                   end
-                                else if(in_out_cnt==n-k-2)
+                                else if(in_out_cnt==n-k-2*width)
                                   begin
-                                    in_out_cnt<=in_out_cnt+1;
+                                    in_out_cnt<=in_out_cnt+width;
                                     check<=check;
                                     s_axis_tready<=0;
-                                    m_axis_tdata<=check[n-k-1-in_out_cnt-1];
+                                    m_axis_tdata<=check[(n-k-1-in_out_cnt-width*2+1) +: width];
                                     m_axis_tvalid<=1;
                                     m_axis_tlast<=1;
                                     state<=state;
                                   end
                                 else
                                   begin
-                                    in_out_cnt<=in_out_cnt+1;
+                                    in_out_cnt<=in_out_cnt+width;
                                     check<=check;
                                     s_axis_tready<=0;
-                                    m_axis_tdata<=check[n-k-1-in_out_cnt-1];
+                                    m_axis_tdata<=check[(n-k-1-in_out_cnt-width*2+1) +: width];
                                     m_axis_tvalid<=1;
                                     m_axis_tlast<=0;
                                     state<=state;

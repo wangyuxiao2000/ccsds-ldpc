@@ -12,8 +12,8 @@
 `define response_path "../sources/TB/response.txt" /*定义 响应文件路径*/
 `define result_path   "../sources/TB/result.txt"   /*定义 输出文件路径*/
 
-`define stimulus_width  1   /*定义 激励数据位宽*/
-`define response_width  1   /*定义 响应数据位宽*/
+`define stimulus_width  8   /*定义 激励数据位宽*/
+`define response_width  8   /*定义 响应数据位宽*/
 
 module ccsds_ldpc_encoder_tb();
 /**************************信号定义**************************/
@@ -33,7 +33,8 @@ reg m_tready;
 
 
 /************************例化待测模块************************/
-ccsds_ldpc_encoder #(.stander("8160,7136")
+ccsds_ldpc_encoder #(.stander("1280,1024"),
+                     .width(`stimulus_width)
                     ) i1 (.clk(clk),
                           .rst_n(rst_n),
                           .s_axis_tdata(s_tdata),
@@ -77,11 +78,10 @@ begin
   s_tdata=0;
   s_tvalid=0;
   stimulus_en=1;
-  @(posedge rst_n)/*复位结束后经过两个时钟周期允许施加激励*/
+  @(posedge rst_n) /*复位结束后经过两个时钟周期允许施加激励*/
   begin
-    @(posedge clk);
-    @(posedge clk);
-    s_tvalid=1;/*将输入有效标志信号拉高*/
+    #(`Period*2.1)
+    s_tvalid=1; /*将输入有效标志信号拉高*/
     while(stimulus_en)
       begin
         @(negedge clk)

@@ -11,11 +11,12 @@ close all;
 clc;
 
 % 设定参数
-stander = "8160_7136"; % 设定码长:
+stander = "1280_1024"; % 设定码长:
                        % 对于近地应用可选"8176_7154"、"8160_7136"
                        % 对于深空应用可选"1280_1024"、"1536_1024"、"2048_1024"
-                       %                 "5120_4096"、"6144_4096"、"8192_4096"
-                       %                 "20480_16384"、"24576_16384"、"32768_16384"
+                       %                "5120_4096"、"6144_4096"、"8192_4096"
+                       %                "20480_16384"、"24576_16384"、"32768_16384"
+width = 8;             % RTL模块位宽:支持1、2、4、8、16、32、64
 block_num = 10;        % 设定仿真码块数
 
 % 提取当前码字的(n, k)参数
@@ -24,7 +25,7 @@ n = str2double(splitStr{1});
 k = str2double(splitStr{2});
 
 % 生成H矩阵及G矩阵
-[H, G, G_simplify, sub_matrix_size] = H_G_generator(stander);
+[H, H_simplify, sub_matrix_size_H, G, G_simplify, sub_matrix_size_G] = H_G_generator(stander);
 
 % 将G矩阵导出为RTL代码所需的localparam参数
 % G_simplify = cellfun(@(binaryVector) binaryVectorToHex(binaryVector), G_simplify, 'UniformOutput', false);
@@ -32,7 +33,7 @@ k = str2double(splitStr{2});
 % for i = 1:size(G_simplify, 1)
 %     for j = 1:size(G_simplify, 2)
 %         hex_value = G_simplify{i, j};
-%         localparam_statement = sprintf('localparam G%d_%d = %d''h%s;\n', i, j, sub_matrix_size(2), hex_value);
+%         localparam_statement = sprintf('localparam G%d_%d = %d''h%s;\n', i, j, sub_matrix_size_G(2), hex_value);
 %         fprintf(fileID, '%s', localparam_statement);
 %     end
 % end
@@ -46,13 +47,21 @@ encoder_result = ldpc_encoder(stander, usr_data);
 
 % 将测试用例导出,作为RTL代码测试向量
 stimulus_data = reshape(usr_data.', 1, []);
+stimulus_data = reshape(stimulus_data, width, []).';
 fid = fopen("../ccsds_ldpc_encoder/sources/TB/stimulus.txt",'w');
-fprintf(fid,'%d\r\n', stimulus_data);
+for i = 1:size(stimulus_data, 1)
+    fprintf(fid, '%d', stimulus_data(i, :));
+    fprintf(fid, '\n');
+end
 fclose(fid);
 
 response_data = reshape(encoder_result.', 1, []);
+response_data = reshape(response_data, width, []).';
 fid = fopen("../ccsds_ldpc_encoder/sources/TB/response.txt",'w');
-fprintf(fid,'%d\r\n', response_data);
+for i = 1:size(response_data, 1)
+    fprintf(fid, '%d', response_data(i, :));
+    fprintf(fid, '\n');
+end
 fclose(fid);
 
-clearvars -except usr_data G G_simplify sub_matrix_size encoder_result;
+clearvars -except usr_data encoder_result H H_simplify sub_matrix_size_H G G_simplify sub_matrix_size_G;

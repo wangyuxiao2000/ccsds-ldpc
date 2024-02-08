@@ -13,7 +13,7 @@ function result = ldpc_encoder(stander, usr_data) % result的每行是一个码�
     end
     
     % 产生G矩阵
-    [~, ~, G_simplify, sub_matrix_size] = H_G_generator(stander);
+    [~, ~, ~, ~, G_simplify, sub_matrix_size_G] = H_G_generator(stander);
     
     % 提取当前码字的(n, k)参数
     splitStr = split(stander, "_");
@@ -32,13 +32,13 @@ function result = ldpc_encoder(stander, usr_data) % result的每行是一个码�
         ccsds_usr_data = reshape(ccsds_usr_data.', 1, []);
         
         % 进行(8176, 7154)LDPC编码
-        encoder_result = ldpc_encoder_core(ccsds_usr_data, 8176, 7154, G_simplify, sub_matrix_size, block_num);
+        encoder_result = ldpc_encoder_core(ccsds_usr_data, 8176, 7154, G_simplify, sub_matrix_size_G, block_num);
 
         % 对每个LDPC码块编码得到的8176bit去除18bit虚拟填充,并在尾部添加2bit的0
         result = [encoder_result(:, 19:end), zeros(size(encoder_result, 1), 2)];
     else
         % 进行(n, k)LDPC编码
-        result = ldpc_encoder_core(usr_data_valid, n, k, G_simplify, sub_matrix_size, block_num);
+        result = ldpc_encoder_core(usr_data_valid, n, k, G_simplify, sub_matrix_size_G, block_num);
     end
 
 end

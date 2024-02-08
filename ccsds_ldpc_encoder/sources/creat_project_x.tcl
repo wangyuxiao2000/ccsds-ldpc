@@ -52,10 +52,13 @@ set_property display_name $project_name [ipx::current_core]
 
 set_property description {wyxee2000@163.com} [ipx::current_core]
 ipgui::move_param -component [ipx::current_core] -order 0 [ipgui::get_guiparamspec -name "stander" -component [ipx::current_core]] -parent [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]]
+ipgui::move_param -component [ipx::current_core] -order 1 [ipgui::get_guiparamspec -name "width" -component [ipx::current_core]] -parent [ipgui::get_pagespec -name "Page 0" -component [ipx::current_core]]
 set_property widget {textEdit} [ipgui::get_guiparamspec -name "stander" -component [ipx::current_core] ]
 set_property tooltip {8176,7154 and 8160,7136 for near earth, others for deep space applications.} [ipgui::get_guiparamspec -name "stander" -component [ipx::current_core] ]
+set_property widget {textEdit} [ipgui::get_guiparamspec -name "width" -component [ipx::current_core] ]
+set_property tooltip {Parallel encoding bit width.} [ipgui::get_guiparamspec -name "width" -component [ipx::current_core] ]
 set_property widget {comboBox} [ipgui::get_guiparamspec -name "stander" -component [ipx::current_core] ]
-set_property value_validation_list {"8176,7154" "8160,7136" "1280,1024" "1536,1024" "2048,1024" "5120,4096" "6144,4096" "8192,4096" "20480,16384" "24756,16384"} [ipx::get_user_parameters stander -of_objects [ipx::current_core]]
+set_property value_validation_list {"8176,7154" "8160,7136" "1280,1024" "1536,1024" "2048,1024" "5120,4096" "6144,4096" "8192,4096" "20480,16384" "24576,16384" "32768,16384"} [ipx::get_user_parameters stander -of_objects [ipx::current_core]]
 
 cd ../../$project_name/my_ip/$project_name
 ipx::add_file_group -type misc {} [ipx::current_core]

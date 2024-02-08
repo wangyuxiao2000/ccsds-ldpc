@@ -13,7 +13,7 @@ function [result_message, result_full, right_flag] = ldpc_decoder(stander, rx_si
     end
     
     % 产生H矩阵
-    [H, ~, ~, ~] = H_G_generator(stander);
+    [H, ~, ~, ~, ~, ~] = H_G_generator(stander);
     
     % 提取当前码字的(n, k)参数
     splitStr = split(stander, "_");

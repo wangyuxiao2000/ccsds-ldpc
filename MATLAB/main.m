@@ -29,7 +29,7 @@ n = str2double(splitStr{1});
 k = str2double(splitStr{2});
     
 % 生成H矩阵和G矩阵(CCSDS 131.1-O-1)
-[H, G_sub_matrix, sub_matrix_size] = H_G_generator(stander);
+[H, H_simplify, sub_matrix_size_H, G, G_simplify, sub_matrix_size_G] = H_G_generator(stander);
 
 % 进行LDPC编码及BPSK电平映射
 usr_data = m_sequence([1 0 0 0 0 0 0 0 0 0], [1 0 0 0 0 0 0 1 0 0 1], k*block_num);
@@ -63,4 +63,4 @@ ylabel("BER");
 legend("iteratio max=20");
 title("UMP-BP BER for (2048,1024)");
 
-clearvars -except H G_sub_matrix Eb_N0_request Eb_N0_real ber;
+clearvars -except H H_simplify sub_matrix_size_H G G_simplify sub_matrix_size_G Eb_N0_request Eb_N0_real ber;

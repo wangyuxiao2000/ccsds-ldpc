@@ -5,47 +5,51 @@
 % Data    : 2024.1.3
 % Version : V 1.0
 %*************************************************************%
-function [H, G, G_simplify, sub_matrix_size] = H_G_generator(stander)
+function [H, H_simplify, sub_matrix_size_H, G, G_simplify, sub_matrix_size_G] = H_G_generator(stander)
     
     if stander=="8176_7154" || stander=="8160_7136"
         % 定义H矩阵及G矩阵(CCSDS 131.1-O-1)
         G_path = "NEAR_EARTH_G.txt";
         H_path = "NEAR_EARTH_H.txt";
-        sub_matrix_size = [511 511];
+        sub_matrix_size_G = [511 511];
+        sub_matrix_size_H = [511 511];
         
         % 生成完整的H矩阵
         H_stander = load(H_path);
         H = zeros(1022, 8176);
         H_cell = cell(1,32); % 每个cell是一个循环子矩阵
         for sub_num = 1:32
-            H_sub_matrix = zeros(sub_matrix_size(1), sub_matrix_size(2));
+            H_sub_matrix = zeros(sub_matrix_size_H(1), sub_matrix_size_H(2));
             H_one_position = H_stander(sub_num, :) + 1; % 该子矩阵首行的1元素位置
             H_sub_matrix(1, H_one_position) = 1; % 该子矩阵的首行数据
-            for i = 2:sub_matrix_size(1) % 由首行数据循环移位得到整个子矩阵
+            for i = 2:sub_matrix_size_H(1) % 由首行数据循环移位得到整个子矩阵
                 H_sub_matrix(i, :) = [H_sub_matrix(i-1, end), H_sub_matrix(i-1, 1:end-1)];
             end
             H_cell{sub_num} = H_sub_matrix;
         end
         H(1:511, :) = cell2mat(H_cell(1:16));
         H(512:1022, :) = cell2mat(H_cell(17:32));
-
+        
+        % 生成稀疏表示的H矩阵
+        H_simplify = H_2_sparse(H, sub_matrix_size_H);
+        
         % 生成G矩阵各子块(监督位编码部分)的首行数据
         fid = fopen(G_path, 'r');
         G_simplify = textscan(fid, '%s', 'Delimiter', '\n');
         G_simplify = G_simplify{1};
         fclose(fid);
         G_simplify = [G_simplify(1:2:end), G_simplify(2:2:end)]; % 第1、2个,第3、4个...子矩阵位于同一行
-        G_simplify = cellfun(@(x) hexToBinaryVector(x, sub_matrix_size(1)+1), G_simplify, 'UniformOutput', false); % 将128个16进制数据转为512比特的二进制数据
+        G_simplify = cellfun(@(x) hexToBinaryVector(x, sub_matrix_size_G(1)+1), G_simplify, 'UniformOutput', false); % 将128个16进制数据转为512比特的二进制数据
         G_simplify = cellfun(@(x) x(2:end), G_simplify, 'UniformOutput', false); % 取低位(右侧高索引)的511个数据作为矩阵数据
         
         % 生成完整的G矩阵
         W = zeros(7154, 1022);
         for sub_num = 1:14
-            G_sub_matrix_1 = zeros(sub_matrix_size(1), sub_matrix_size(2));
-            G_sub_matrix_2 = zeros(sub_matrix_size(1), sub_matrix_size(2));
+            G_sub_matrix_1 = zeros(sub_matrix_size_G(1), sub_matrix_size_G(2));
+            G_sub_matrix_2 = zeros(sub_matrix_size_G(1), sub_matrix_size_G(2));
             G_sub_matrix_1(1, :) = G_simplify{sub_num, 1};
             G_sub_matrix_2(1, :) = G_simplify{sub_num, 2};
-            for i = 2:sub_matrix_size(1) 
+            for i = 2:sub_matrix_size_G(1) 
                 G_sub_matrix_1(i, :) = [G_sub_matrix_1(i-1, end), G_sub_matrix_1(i-1, 1:end-1)];
                 G_sub_matrix_2(i, :) = [G_sub_matrix_2(i-1, end), G_sub_matrix_2(i-1, 1:end-1)];
             end
@@ -57,7 +61,31 @@ function [H, G, G_simplify, sub_matrix_size] = H_G_generator(stander)
         H = AR4JA_matrix.H;
         G = AR4JA_matrix.G;
         G_simplify = AR4JA_matrix.G_simplify;
-        sub_matrix_size = [size(G_simplify{1,1}, 2) size(G_simplify{1,1}, 2)];
+        sub_matrix_size_G = [size(G_simplify{1,1}, 2) size(G_simplify{1,1}, 2)];
+        sub_matrix_size_H = [sub_matrix_size_G(1)*4, sub_matrix_size_G(2)*4];
+        H_simplify = H_2_sparse(H, sub_matrix_size_H);
+    end
+
+end
+
+
+function H_simplify = H_2_sparse(H, sub_size)
+
+    num_rows = size(H, 1) / sub_size(1);
+    num_cols = size(H, 2) / sub_size(2);
+    H_simplify = cell(num_rows, num_cols);
+    for i = 1:num_rows
+        for j = 1:num_cols
+            % 计算当前子块的起始位置
+            row_start = (i - 1) * sub_size(1) + 1;
+            col_start = (j - 1) * sub_size(2) + 1;
+        
+            % 提取当前子块的首行
+            block_first_row = H(row_start, col_start:col_start + sub_size(2) - 1);
+        
+            % 将首行表示为稀疏矩阵
+            H_simplify{i, j} = sparse(block_first_row);
+        end
     end
 
 end
