@@ -8,7 +8,7 @@
 `timescale 1 ns / 1 ps
 
 module ccsds_ldpc_encoder (clk,rst_n,s_axis_tdata,s_axis_tvalid,s_axis_tready,m_axis_tdata,m_axis_tvalid,m_axis_tlast,m_axis_tready);
-/************************************************生成矩阵设置************************************************/
+/**************************************************参数设置**************************************************/
 parameter stander = "1280,1024"; /*设定码长*/
 parameter width = 8;             /*设定并行编码位宽*/
 /***********************************************************************************************************/
@@ -30,30 +30,32 @@ input m_axis_tready;               /*下游模块传来的读请求或读确认�
 generate
 if(stander == "8176,7154")
 begin
-  encoder_8176_7154 U1 (.clk(clk),
-                        .rst_n(rst_n),
-                        .s_axis_tdata(s_axis_tdata),
-                        .s_axis_tvalid(s_axis_tvalid),
-                        .s_axis_tready(s_axis_tready),
-                        .m_axis_tdata(m_axis_tdata),
-                        .m_axis_tvalid(m_axis_tvalid),
-                        .m_axis_tlast(m_axis_tlast),
-                        .m_axis_tready(m_axis_tready)
-                       );
+  encoder_8176_7154 #(.width(width)
+                     ) U1 (.clk(clk),
+                           .rst_n(rst_n),
+                           .s_axis_tdata(s_axis_tdata),
+                           .s_axis_tvalid(s_axis_tvalid),
+                           .s_axis_tready(s_axis_tready),
+                           .m_axis_tdata(m_axis_tdata),
+                           .m_axis_tvalid(m_axis_tvalid),
+                           .m_axis_tlast(m_axis_tlast),
+                           .m_axis_tready(m_axis_tready)
+                          );
 end
 
 else if(stander == "8160,7136")
 begin
-  encoder_8160_7136 U1 (.clk(clk),
-                        .rst_n(rst_n),
-                        .s_axis_tdata(s_axis_tdata),
-                        .s_axis_tvalid(s_axis_tvalid),
-                        .s_axis_tready(s_axis_tready),
-                        .m_axis_tdata(m_axis_tdata),
-                        .m_axis_tvalid(m_axis_tvalid),
-                        .m_axis_tlast(m_axis_tlast),
-                        .m_axis_tready(m_axis_tready)
-                       );
+  encoder_8160_7136 #(.width(width)
+                     ) U1 (.clk(clk),
+                           .rst_n(rst_n),
+                           .s_axis_tdata(s_axis_tdata),
+                           .s_axis_tvalid(s_axis_tvalid),
+                           .s_axis_tready(s_axis_tready),
+                           .m_axis_tdata(m_axis_tdata),
+                           .m_axis_tvalid(m_axis_tvalid),
+                           .m_axis_tlast(m_axis_tlast),
+                           .m_axis_tready(m_axis_tready)
+                          );
 end
 
 else if(stander == "1280,1024")

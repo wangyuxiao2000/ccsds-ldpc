@@ -33,7 +33,7 @@ reg m_tready;
 
 
 /************************例化待测模块************************/
-ccsds_ldpc_encoder #(.stander("1280,1024"),
+ccsds_ldpc_encoder #(.stander("8160,7136"),
                      .width(`stimulus_width)
                     ) i1 (.clk(clk),
                           .rst_n(rst_n),
@@ -95,7 +95,7 @@ begin
                   s_tvalid=0;
                   stimulus_en=0;
                   stimulus_num=stimulus_num;
-                  $display("time=%t, Data inputs finish,a total of %d inputs",$time,stimulus_num); 
+                  $display("time=%t, Data inputs finish,a total of %d inputs",$time,stimulus_num);
                 end
               else
                 begin
