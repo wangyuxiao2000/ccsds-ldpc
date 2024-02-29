@@ -33,7 +33,7 @@ reg m_tready;
 
 
 /************************例化待测模块************************/
-ccsds_ldpc_encoder #(.stander("8160,7136"),
+ccsds_ldpc_encoder #(.stander("1280,1024"),
                      .width(`stimulus_width)
                     ) i1 (.clk(clk),
                           .rst_n(rst_n),
@@ -132,8 +132,17 @@ reg [`response_width-1:0] response;
 
 initial
 begin
-  response_en=1;
   m_tready=1;
+  // #(`Period*100.5)
+  // m_tready=0;
+  // #(`Period*1000.5)
+  // m_tready=1;
+end
+
+initial
+begin
+  response_en=1;
+  // m_tready=1;
   file_response=$fopen(`response_path,"r");
   file_result=$fopen(`result_path,"w");
   @(posedge m_tvalid) /*触发条件为复位结束或产生有效输出数据;此处规定产生有效输出数据后开始采集输出数据*/
@@ -151,7 +160,7 @@ begin
               response_num=response_num;
               $display("time=%t, Data outputs finish,a total of %d outputs",$time,response_num);
             end
-          else if(m_tvalid)
+          else if(m_tvalid&&m_tready)
             begin
               response=response;
               response_en=1;

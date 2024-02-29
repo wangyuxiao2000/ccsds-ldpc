@@ -285,14 +285,17 @@ input m_axis_tready;                   /*下游模块传来的读请求或读确
 
 
 /************************************************进行LDPC编码************************************************/
-localparam STATE_waiting_data_in=3'b100;  /*等待输入*/
-localparam STATE_data_out=3'b010;         /*输出信息位*/
-localparam STATE_check_out=3'b001;        /*输出校验位*/
+localparam STATE_waiting_valid=4'b1000;  /*等待valid信号*/
+localparam STATE_data_out=4'b0100;       /*输出信息位*/
+localparam STATE_waiting_ready=4'b0010;  /*等待ready信号*/
+localparam STATE_check_out=4'b0001;      /*输出校验位*/
 
-reg [2:0] state;               /*状态机*/
+reg [3:0] state;               /*状态机*/
 reg [$clog2(n):0] in_out_cnt;  /*输入/输出计数器*/
 reg [n-k-1:0] g;               /*生成矩阵当前所在行*/
 reg [n-k-1:0] check;           /*校验位*/
+reg [width-1:0] s_tdata_reg;   /*输入寄存器*/
+reg reg_flag;                  /*指示输入寄存器内是否有数据*/
 
 wire [n-k-1:0] check_sub [width-1:0];
 wire [n-k-1:0] check_reg;
@@ -338,52 +341,58 @@ begin
       g<={G1_1,G1_2,G1_3,G1_4,G1_5,G1_6,G1_7,G1_8};
       check<=0;
       s_axis_tready<=0;
+      s_tdata_reg<=0;
+      reg_flag<=0;
       m_axis_tdata<=0;
       m_axis_tvalid<=0;
       m_axis_tlast<=0;
-      state<=STATE_waiting_data_in;
+      state<=STATE_waiting_valid;
     end
   else
     begin
       case(state)
-        STATE_waiting_data_in : begin
-                                  in_out_cnt<=in_out_cnt;
-                                  g<=g;
-                                  m_axis_tlast<=0;
-                                  if(s_axis_tready&&s_axis_tvalid)
-                                    begin
-                                      s_axis_tready<=0;
-                                      m_axis_tdata<=s_axis_tdata;
-                                      m_axis_tvalid<=1;
-                                      state<=STATE_data_out;
-                                    end
-                                  else
-                                    begin
-                                      s_axis_tready<=1;
-                                      m_axis_tdata<=m_axis_tdata;
-                                      m_axis_tvalid<=m_axis_tvalid;
-                                      state<=state;
-                                    end
-                                end
+        STATE_waiting_valid : begin
+                                s_axis_tready<=1;
+                                if(s_axis_tready&&s_axis_tvalid) /*等待valid信号输入*/
+                                  begin
+                                    m_axis_tdata<=s_axis_tdata;
+                                    m_axis_tvalid<=1;
+                                    state<=STATE_data_out;
+                                  end
+                              end
 
         STATE_data_out : begin
-                           m_axis_tdata<=m_axis_tdata;
-                           m_axis_tlast<=0;
                            if(m_axis_tready&&m_axis_tvalid)
                              begin
-                               m_axis_tvalid<=0;
-                               check<=check^check_reg;
-                               if(in_out_cnt==k-width)
+                               check<=check^check_reg; /*计算校验位*/
+                               if(in_out_cnt==k-width) /*本码块的信息位输出完成*/
                                  begin
                                    in_out_cnt<=0;
                                    s_axis_tready<=0;
+                                   m_axis_tdata<=m_axis_tdata;
+                                   m_axis_tvalid<=0;
                                    state<=STATE_check_out;
+                                   if(s_axis_tready&&s_axis_tvalid) /*输出本次信息位后,需继续输出校验位;若输入端具备有效数据,则将有效数据寄存*/
+                                     begin
+                                       s_tdata_reg<=s_axis_tdata;
+                                       reg_flag<=1;
+                                     end
                                  end
                                else
                                  begin
                                    in_out_cnt<=in_out_cnt+width;
-                                   s_axis_tready<=1;
-                                   state<=STATE_waiting_data_in;                     
+                                   if(s_axis_tready&&s_axis_tvalid) /*输出本次信息位后,若输入端具备有效数据,则将有效数据输出*/
+                                     begin
+                                       m_axis_tdata<=s_axis_tdata;
+                                       m_axis_tvalid<=1;
+                                       state<=STATE_data_out;
+                                     end
+                                   else
+                                     begin
+                                       m_axis_tdata<=m_axis_tdata;
+                                       m_axis_tvalid<=0;
+                                       state<=STATE_waiting_valid;
+                                     end
                                  end
                                case(in_out_cnt)
                                  sub_size*1-width : g<={G2_1,G2_2,G2_3,G2_4,G2_5,G2_6,G2_7,G2_8};
@@ -429,28 +438,99 @@ begin
                                               };
                                endcase
                              end
-                           else
+                           else /*后级模块不能接受数据,本次信息位输出未被后级模块取走*/
                              begin
-                               in_out_cnt<=in_out_cnt;
-                               g<=g;
-                               check<=check;
                                s_axis_tready<=0;
-                               m_axis_tvalid<=m_axis_tvalid;
-                               state<=state;
+                               state<=STATE_waiting_ready;
+                               if(s_axis_tready&&s_axis_tvalid) /*本次输出未被取走,即使输入端具备有效数据,也不能将其更新至输出,只能寄存*/
+                                 begin
+                                   s_tdata_reg<=s_axis_tdata;
+                                   reg_flag<=1;
+                                 end
                              end
                          end
+      
+        STATE_waiting_ready : begin
+                                if(m_axis_tready&&m_axis_tvalid)
+                                  begin
+                                    check<=check^check_reg;
+                                    if(in_out_cnt==k-width)
+                                      begin
+                                        in_out_cnt<=0;
+                                        m_axis_tdata<=m_axis_tdata;
+                                        m_axis_tvalid<=0;
+                                        state<=STATE_check_out;
+                                      end
+                                    else
+                                      begin
+                                        in_out_cnt<=in_out_cnt+width;
+                                        s_axis_tready<=1;
+                                        if(reg_flag==0)
+                                          begin
+                                            m_axis_tdata<=m_axis_tdata;
+                                            m_axis_tvalid<=0;
+                                            state<=STATE_waiting_valid;
+                                          end
+                                        else
+                                          begin
+                                            reg_flag<=0;
+                                            m_axis_tdata<=s_tdata_reg;
+                                            m_axis_tvalid<=1;
+                                            state<=STATE_data_out;
+                                          end
+                                      end
+                                    case(in_out_cnt)
+                                      sub_size*1-width : g<={G2_1,G2_2,G2_3,G2_4,G2_5,G2_6,G2_7,G2_8};
+                                      sub_size*2-width : g<={G3_1,G3_2,G3_3,G3_4,G3_5,G3_6,G3_7,G3_8};
+                                      sub_size*3-width : g<={G4_1,G4_2,G4_3,G4_4,G4_5,G4_6,G4_7,G4_8};
+                                      sub_size*4-width : g<={G5_1,G5_2,G5_3,G5_4,G5_5,G5_6,G5_7,G5_8};
+                                      sub_size*5-width : g<={G6_1,G6_2,G6_3,G6_4,G6_5,G6_6,G6_7,G6_8};
+                                      sub_size*6-width : g<={G7_1,G7_2,G7_3,G7_4,G7_5,G7_6,G7_7,G7_8};
+                                      sub_size*7-width : g<={G8_1,G8_2,G8_3,G8_4,G8_5,G8_6,G8_7,G8_8};
+                                      sub_size*8-width : g<={G9_1,G9_2,G9_3,G9_4,G9_5,G9_6,G9_7,G9_8};
+                                      sub_size*9-width : g<={G10_1,G10_2,G10_3,G10_4,G10_5,G10_6,G10_7,G10_8};
+                                      sub_size*10-width: g<={G11_1,G11_2,G11_3,G11_4,G11_5,G11_6,G11_7,G11_8};
+                                      sub_size*11-width: g<={G12_1,G12_2,G12_3,G12_4,G12_5,G12_6,G12_7,G12_8};
+                                      sub_size*12-width: g<={G13_1,G13_2,G13_3,G13_4,G13_5,G13_6,G13_7,G13_8};
+                                      sub_size*13-width: g<={G14_1,G14_2,G14_3,G14_4,G14_5,G14_6,G14_7,G14_8};
+                                      sub_size*14-width: g<={G15_1,G15_2,G15_3,G15_4,G15_5,G15_6,G15_7,G15_8};
+                                      sub_size*15-width: g<={G16_1,G16_2,G16_3,G16_4,G16_5,G16_6,G16_7,G16_8};
+                                      sub_size*16-width: g<={G17_1,G17_2,G17_3,G17_4,G17_5,G17_6,G17_7,G17_8};
+                                      sub_size*17-width: g<={G18_1,G18_2,G18_3,G18_4,G18_5,G18_6,G18_7,G18_8};
+                                      sub_size*18-width: g<={G19_1,G19_2,G19_3,G19_4,G19_5,G19_6,G19_7,G19_8};
+                                      sub_size*19-width: g<={G20_1,G20_2,G20_3,G20_4,G20_5,G20_6,G20_7,G20_8};
+                                      sub_size*20-width: g<={G21_1,G21_2,G21_3,G21_4,G21_5,G21_6,G21_7,G21_8};
+                                      sub_size*21-width: g<={G22_1,G22_2,G22_3,G22_4,G22_5,G22_6,G22_7,G22_8};
+                                      sub_size*22-width: g<={G23_1,G23_2,G23_3,G23_4,G23_5,G23_6,G23_7,G23_8};
+                                      sub_size*23-width: g<={G24_1,G24_2,G24_3,G24_4,G24_5,G24_6,G24_7,G24_8};
+                                      sub_size*24-width: g<={G25_1,G25_2,G25_3,G25_4,G25_5,G25_6,G25_7,G25_8};
+                                      sub_size*25-width: g<={G26_1,G26_2,G26_3,G26_4,G26_5,G26_6,G26_7,G26_8};
+                                      sub_size*26-width: g<={G27_1,G27_2,G27_3,G27_4,G27_5,G27_6,G27_7,G27_8};
+                                      sub_size*27-width: g<={G28_1,G28_2,G28_3,G28_4,G28_5,G28_6,G28_7,G28_8};
+                                      sub_size*28-width: g<={G29_1,G29_2,G29_3,G29_4,G29_5,G29_6,G29_7,G29_8};
+                                      sub_size*29-width: g<={G30_1,G30_2,G30_3,G30_4,G30_5,G30_6,G30_7,G30_8};
+                                      sub_size*30-width: g<={G31_1,G31_2,G31_3,G31_4,G31_5,G31_6,G31_7,G31_8};
+                                      sub_size*31-width: g<={G32_1,G32_2,G32_3,G32_4,G32_5,G32_6,G32_7,G32_8};
+                                      sub_size*32-width: g<={G1_1,G1_2,G1_3,G1_4,G1_5,G1_6,G1_7,G1_8};
+                                      default : g<={{g[sub_size*7+width-1:sub_size*7],g[sub_size*8-1:sub_size*7+width]},
+                                                    {g[sub_size*6+width-1:sub_size*6],g[sub_size*7-1:sub_size*6+width]},
+                                                    {g[sub_size*5+width-1:sub_size*5],g[sub_size*6-1:sub_size*5+width]},
+                                                    {g[sub_size*4+width-1:sub_size*4],g[sub_size*5-1:sub_size*4+width]},
+                                                    {g[sub_size*3+width-1:sub_size*3],g[sub_size*4-1:sub_size*3+width]},
+                                                    {g[sub_size*2+width-1:sub_size*2],g[sub_size*3-1:sub_size*2+width]},
+                                                    {g[sub_size*1+width-1:sub_size*1],g[sub_size*2-1:sub_size*1+width]},
+                                                    {g[sub_size*0+width-1:sub_size*0],g[sub_size*1-1:sub_size*0+width]}
+                                                   };
+                                    endcase
+                                  end
+                              end
 
         STATE_check_out : begin
-                            g<=g;
                             if(!m_axis_tvalid)
                               begin
-                                in_out_cnt<=in_out_cnt;
-                                check<=check;
-                                s_axis_tready<=0;
+                                in_out_cnt<=0;
                                 m_axis_tdata<=check[n-k-1:n-k-width];
                                 m_axis_tvalid<=1;
-                                m_axis_tlast<=0;
-                                state<=state;
                               end
                             else if(m_axis_tready&&m_axis_tvalid)
                               begin
@@ -459,41 +539,31 @@ begin
                                     in_out_cnt<=0;
                                     check<=0;
                                     s_axis_tready<=1;
-                                    m_axis_tdata<=m_axis_tdata;
-                                    m_axis_tvalid<=0;
                                     m_axis_tlast<=0;
-                                    state<=STATE_waiting_data_in;
+                                    if(reg_flag)
+                                      begin
+                                        m_axis_tdata<=s_tdata_reg;
+                                        reg_flag<=0;
+                                        state<=STATE_data_out;
+                                      end
+                                    else
+                                      begin
+                                        m_axis_tdata<=m_axis_tdata;
+                                        m_axis_tvalid<=0;
+                                        state<=STATE_waiting_valid;
+                                      end
                                   end
                                 else if(in_out_cnt==n-k-2*width)
                                   begin
                                     in_out_cnt<=in_out_cnt+width;
-                                    check<=check;
-                                    s_axis_tready<=0;
                                     m_axis_tdata<=check[(n-k-1-in_out_cnt-width*2+1) +: width];
-                                    m_axis_tvalid<=1;
                                     m_axis_tlast<=1;
-                                    state<=state;
                                   end
                                 else
                                   begin
                                     in_out_cnt<=in_out_cnt+width;
-                                    check<=check;
-                                    s_axis_tready<=0;
                                     m_axis_tdata<=check[(n-k-1-in_out_cnt-width*2+1) +: width];
-                                    m_axis_tvalid<=1;
-                                    m_axis_tlast<=0;
-                                    state<=state;
                                   end
-                              end
-                            else
-                              begin
-                                in_out_cnt<=in_out_cnt;
-                                check<=check;
-                                s_axis_tready<=0;
-                                m_axis_tdata<=m_axis_tdata;
-                                m_axis_tvalid<=m_axis_tvalid;
-                                m_axis_tlast<=m_axis_tlast;
-                                state<=state;
                               end
                           end
                           
@@ -505,7 +575,7 @@ begin
                     m_axis_tdata<=0;
                     m_axis_tvalid<=0;
                     m_axis_tlast<=0;
-                    state<=STATE_waiting_data_in;            
+                    state<=STATE_waiting_valid;            
                   end
       endcase
     end
