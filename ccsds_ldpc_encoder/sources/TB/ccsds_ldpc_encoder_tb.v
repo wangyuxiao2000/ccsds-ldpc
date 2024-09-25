@@ -5,7 +5,7 @@
 //Data    : 2023.12.21
 //Version : V 1.0
 /*************************************************************/
-`timescale 1 ns / 1 ns       /*定义 仿真时间单位/精度*/
+`timescale 1 ns / 1 ps       /*定义 仿真时间单位/精度*/
 `define Period 20            /*定义 时钟周期*/
 
 `define stimulus_path "../sources/TB/stimulus.txt" /*定义 激励文件路径*/
